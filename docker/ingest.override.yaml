@@ -1,0 +1,3 @@
+database_url: postgresql://ghost@db:5432/ghost
+video_encoder: libx265
+embedding_url: http://embeddings:8790/v1

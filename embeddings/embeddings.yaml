@@ -1,0 +1,7 @@
+model: Qwen/Qwen3-VL-Embedding-2B
+host: 127.0.0.1
+port: 8790
+device: mps
+dtype: float16
+max_batch: 8
+query_instruction: Retrieve images or text relevant to the user's query.

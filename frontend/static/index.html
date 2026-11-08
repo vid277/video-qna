@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghostcam</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%226%22 fill=%22%2317181C%22/%3E%3Ccircle cx=%228%22 cy=%228%22 r=%222.5%22 fill=%22white%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --white: #ffffff;
+    --ink: #17181c;
+    --ink-2: #5f6571;
+    --ink-3: #9aa0aa;
+    --hair: #e7e9ed;
+    --surface: #f5f6f8;
+    --live: #e5484d;
+    --added: #2f855a;
+    --removed: #c53030;
+    --moved: #3451b2;
+    --changed: #a16207;
+    --sans: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--white); color: var(--ink); }
+  body {
+    font: 15px/1.6 var(--sans);
+    font-feature-settings: "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    overflow: hidden;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 6px; }
+  code { font: 500 12.5px/1.4 var(--mono); }
+
+  .chat { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; }
+  .bar { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; }
+  .mark { font-weight: 600; font-size: 16px; letter-spacing: -0.015em; }
+  .room-toggle { font-size: 14px; color: var(--ink-2); padding: 4px 10px; border-radius: 8px; }
+  .room-toggle:hover { background: var(--surface); }
+  .bar-links { display: flex; align-items: center; gap: 2px; }
+  .nav-link { font-size: 14px; color: var(--ink-2); padding: 4px 10px; border-radius: 8px; text-decoration: none; }
+  .nav-link:hover { background: var(--surface); }
+
+  .thread { flex: 1; overflow-y: auto; padding: 0 24px 32px; }
+  .column { max-width: 700px; margin: 0 auto; }
+
+  .empty { padding: 20vh 0 0; }
+  .empty h1 { font-size: 30px; line-height: 1.2; font-weight: 500; letter-spacing: -0.025em; margin: 0 0 8px; }
+  .empty p { color: var(--ink-2); margin: 0 0 28px; max-width: 46ch; }
+  .suggestions { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .suggestion { font-size: 15px; color: var(--ink); padding: 7px 12px; margin-left: -12px; border-radius: 10px; text-align: left; }
+  .suggestion:hover { background: var(--surface); }
+
+  .turn { margin: 36px 0; }
+  .question { display: flex; justify-content: flex-end; margin-bottom: 20px; }
+  .question p { margin: 0; max-width: 78%; background: var(--surface); padding: 10px 16px; border-radius: 18px 18px 4px 18px; white-space: pre-wrap; }
+
+  .steps { display: flex; flex-direction: column; margin: 0 0 14px -10px; }
+  details.step > summary {
+    list-style: none; display: flex; align-items: center; gap: 10px;
+    padding: 6px 10px; border-radius: 10px; cursor: pointer; user-select: none;
+    font-size: 14px; color: var(--ink-2);
+  }
+  details.step > summary::-webkit-details-marker { display: none; }
+  details.step > summary:hover { background: var(--surface); }
+  details.step[open] > summary { background: var(--surface); border-radius: 10px 10px 0 0; }
+  .step .verb { color: var(--ink); }
+  .step summary code { background: var(--white); border: 1px solid var(--hair); border-radius: 6px; padding: 1px 6px; color: var(--ink); }
+  .step .count { color: var(--ink-3); }
+  .step .chev { margin-left: auto; color: var(--ink-3); transition: transform 0.15s ease; }
+  details.step[open] .chev { transform: rotate(90deg); }
+  .glyph { width: 14px; height: 14px; flex: none; position: relative; }
+  .glyph::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--ink-3); }
+  .done .glyph::before { background: var(--ink); }
+  .failed .glyph::before { background: var(--removed); }
+  .pending .glyph::before { inset: 1px; background: none; border: 1.5px solid var(--hair); border-top-color: var(--ink); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .found { background: var(--surface); border-radius: 0 0 10px 10px; padding: 4px 14px 16px 34px; margin-bottom: 6px; font-size: 13.5px; }
+  .found h3 { font-size: 12.5px; font-weight: 500; color: var(--ink-2); margin: 12px 0 6px; }
+  .args { display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px; }
+  .args dt { color: var(--ink-3); }
+  .args dd { margin: 0; font: 12.5px/1.5 var(--mono); word-break: break-word; }
+  .hits { display: flex; flex-direction: column; gap: 1px; max-height: 440px; overflow-y: auto; border-radius: 8px; }
+  .hit { display: flex; gap: 12px; align-items: flex-start; background: var(--white); padding: 8px; }
+  .hit:first-child { border-radius: 8px 8px 0 0; } .hit:last-child { border-radius: 0 0 8px 8px; } .hit:only-child { border-radius: 8px; }
+  .hit-body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+  .hit-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .hit-head code { color: var(--ink); }
+  .hit-head span { color: var(--ink-2); font-size: 13px; }
+  .hit-text { color: var(--ink); }
+  .score { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 12px; }
+  .score i { display: block; width: 36px; height: 3px; border-radius: 2px; background: var(--hair); overflow: hidden; }
+  .score i b { display: block; height: 100%; background: var(--ink-2); }
+  .thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  pre.raw { font: 12px/1.5 var(--mono); background: var(--white); border-radius: 8px; padding: 10px 12px; margin: 0; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+
+  .shot { position: relative; margin: 0; flex: none; border-radius: 8px; overflow: hidden; background: #0f1012; cursor: zoom-in; }
+  .shot img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .shot time {
+    position: absolute; left: 8px; bottom: 6px;
+    font: 500 11.5px/1 var(--sans); color: #fff; letter-spacing: 0.01em;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 1px 3px rgba(0, 0, 0, 0.6);
+  }
+  .shot.sm { width: 112px; height: 63px; border-radius: 6px; }
+  .shot.sm time { left: 5px; bottom: 4px; font-size: 10px; }
+  .shot.xs { width: 72px; height: 40px; border-radius: 5px; }
+  .shot.xs time { display: none; }
+
+  .answer { font-size: 17px; line-height: 1.6; margin: 0 0 16px; max-width: 68ch; overflow-wrap: anywhere; }
+  .answer:empty { display: none; }
+  .answer > * { margin: 0 0 0.7em; }
+  .answer > :last-child { margin-bottom: 0; }
+  .answer h4 { font-size: 17px; font-weight: 600; margin-top: 1em; }
+  .answer ul, .answer ol { padding-left: 1.3em; }
+  .answer li + li { margin-top: 0.25em; }
+  .answer strong { font-weight: 600; }
+  .answer a { color: var(--ink); text-underline-offset: 3px; }
+  .answer code { background: var(--surface); border-radius: 5px; padding: 1px 5px; }
+  .answer pre { background: var(--surface); border-radius: 8px; padding: 10px 12px; overflow-x: auto; }
+  .answer pre code { background: none; padding: 0; }
+  .answer .ref { font: 500 0.82em/1 var(--mono); color: var(--ink); border-bottom: 1px dotted var(--ink-3); padding: 0 1px; vertical-align: 0.05em; cursor: zoom-in; }
+  .answer .ref:hover { border-bottom-color: var(--ink); }
+  .answer.streaming > :last-child::after { content: ""; display: inline-block; width: 2px; height: 1.1em; background: var(--ink); margin-left: 2px; vertical-align: -3px; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .evidence { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+  .evidence figure { margin: 0; flex: none; width: 200px; }
+  .evidence .shot { width: 200px; height: 112px; }
+  .evidence figcaption { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .note { font-size: 13px; color: var(--ink-3); margin-top: 12px; }
+  .error { color: var(--removed); font-size: 14px; margin: 8px 0 0; }
+
+  .composer { padding: 8px 24px 22px; }
+  .field {
+    max-width: 700px; margin: 0 auto; display: flex; align-items: flex-end; gap: 10px;
+    border: 1px solid var(--hair); border-radius: 22px; padding: 8px 8px 8px 18px; background: var(--white);
+    box-shadow: 0 1px 2px rgba(23, 24, 28, 0.04), 0 8px 24px rgba(23, 24, 28, 0.06);
+    transition: border-color 0.15s ease;
+  }
+  .field:focus-within { border-color: var(--ink-2); }
+  textarea:focus-visible { outline: none; }
+  textarea { flex: 1; border: 0; outline: 0; resize: none; font: 15px/1.5 var(--sans); padding: 7px 0; max-height: 200px; background: transparent; color: var(--ink); }
+  textarea::placeholder { color: var(--ink-3); }
+  .send { width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; transition: opacity 0.15s ease; }
+  .send:disabled { opacity: 0.2; cursor: default; }
+  .hint { max-width: 700px; margin: 8px auto 0; font-size: 12px; color: var(--ink-3); text-align: center; }
+
+  aside { width: 340px; flex: none; height: 100%; overflow-y: auto; border-left: 1px solid var(--hair); padding: 20px 20px 32px; background: var(--white); }
+  aside h2 { font-size: 14px; font-weight: 600; margin: 28px 0 10px; letter-spacing: -0.005em; }
+  .live { width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; }
+  .live img:not([src]) { visibility: hidden; }
+  .live time { left: 12px; bottom: 10px; font-size: 13px; }
+  .rec {
+    position: absolute; top: 10px; left: 12px; display: flex; align-items: center; gap: 6px;
+    font: 600 12px/1 var(--sans); color: #fff; text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+  }
+  .rec::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25); }
+  .rec.on::before { background: var(--live); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .live-caption { font-size: 13px; color: var(--ink-2); margin: 8px 0 0; }
+
+  .changes { list-style: none; padding: 0; margin: 0; }
+  .changes li { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .changes li + li { border-top: 1px solid var(--hair); }
+  .change-text { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.4; }
+  .change-text b { font-weight: 600; }
+  .change-text span { display: block; color: var(--ink-2); font-size: 12.5px; }
+  .k-added { color: var(--added); } .k-removed { color: var(--removed); } .k-moved { color: var(--moved); } .k-changed { color: var(--changed); }
+  .pair { display: flex; align-items: center; gap: 4px; color: var(--ink-3); font-size: 11px; }
+  .quiet { color: var(--ink-3); font-size: 13.5px; margin: 0; }
+  .changes li.activity, .changes li.item { align-items: flex-start; }
+  .item .change-text b { font-weight: 600; color: var(--ink); }
+  .item .change-text p { margin: 2px 0 0; color: var(--ink-2); font-size: 12.5px; line-height: 1.4; }
+  .activity .change-text p { margin: 2px 0 0; color: var(--ink); font-size: 13px; line-height: 1.45; }
+  .activity .tags { display: flex; flex-wrap: wrap; gap: 0 6px; margin-top: 3px; font-size: 12px; font-weight: 600; }
+  .activity .tags span { display: inline; }
+
+  .system { display: grid; grid-template-columns: max-content 1fr; gap: 7px 14px; margin: 0; font-size: 13.5px; }
+  .system dt { color: var(--ink-2); }
+  .system dd { margin: 0; display: flex; align-items: center; gap: 7px; }
+  .system dd::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--hair); flex: none; }
+  .system dd.ok::before { background: var(--added); } .system dd.warn::before { background: var(--changed); } .system dd.bad::before { background: var(--removed); }
+  .problem { font-size: 13px; color: var(--ink-2); margin: 0; }
+  .problem b { color: var(--changed); font-weight: 600; }
+
+  @media (max-width: 1040px) {
+    aside { position: fixed; inset: 0 0 0 auto; width: min(340px, 92vw); transform: translateX(100%); transition: transform 0.2s ease; box-shadow: -12px 0 40px rgba(23, 24, 28, 0.1); z-index: 5; }
+    body.room-open aside { transform: none; }
+  }
+  @media (min-width: 1041px) { .room-toggle { display: none; } }
+  @media (max-width: 600px) {
+    .thread, .bar, .composer { padding-left: 16px; padding-right: 16px; }
+    .empty { padding-top: 12vh; }
+    .empty h1 { font-size: 26px; }
+    .evidence figure, .evidence .shot { width: 160px; } .evidence .shot { height: 90px; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  dialog { border: 0; padding: 0; background: transparent; max-width: min(96vw, 1600px); }
+  dialog::backdrop { background: rgba(255, 255, 255, 0.96); }
+  dialog .shot { cursor: zoom-out; border-radius: 10px; box-shadow: 0 12px 48px rgba(23, 24, 28, 0.2); }
+  dialog img { max-width: 100%; max-height: 86vh; width: auto; height: auto; }
+  dialog .shot time { font-size: 15px; left: 14px; bottom: 12px; }
+  dialog p { text-align: center; color: var(--ink-2); font-size: 14px; margin: 12px 0 0; }
+</style>
+</head>
+<body>
+<main class="chat">
+  <header class="bar">
+    <span class="mark">Ghostcam</span>
+    <span class="bar-links">
+      <a class="nav-link" href="/monitor">Monitor</a>
+      <button class="room-toggle" id="room-toggle" type="button">Room</button>
+    </span>
+  </header>
+
+  <div class="thread" id="thread">
+    <div class="column" id="messages">
+      <section class="empty" id="welcome">
+        <h1>Ask about the room</h1>
+        <p>Answers come from what the camera recorded, with the frames that show it.</p>
+        <div class="suggestions">
+          <button class="suggestion" type="button">Where did I last leave my book?</button>
+          <button class="suggestion" type="button">Is the door open?</button>
+          <button class="suggestion" type="button">Where are my AirPods?</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <form class="composer" id="composer">
+    <div class="field">
+      <textarea id="input" rows="1" placeholder="Ask about the room" maxlength="500" aria-label="Question" autofocus></textarea>
+      <button class="send" id="send" type="submit" aria-label="Ask" disabled>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 13V3M8 3 3.5 7.5M8 3l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <p class="hint">Enter to ask, Shift+Enter for a new line. Each question is answered on its own.</p>
+  </form>
+</main>
+
+<aside id="room" aria-label="Room">
+  <figure class="shot live" id="live">
+    <img id="latest" alt="Latest camera frame">
+    <span class="rec" id="rec">Offline</span>
+    <time id="latest-time"></time>
+  </figure>
+  <p class="live-caption" id="latest-caption">Waiting for the first frame</p>
+
+  <h2>In the room</h2>
+  <ul class="changes" id="state"><li><p class="quiet">Nothing tracked yet. Items appear here when the camera sees something put down.</p></li></ul>
+
+  <h2>Recent activity</h2>
+  <ul class="changes" id="activity"><li><p class="quiet">No activity recorded yet.</p></li></ul>
+
+  <h2>System</h2>
+  <dl class="system" id="system"><dt>Status</dt><dd>Checking</dd></dl>
+
+  <div id="problem-wrap" hidden>
+    <h2>Last problem</h2>
+    <p class="problem" id="problem"></p>
+  </div>
+</aside>
+
+<dialog id="zoom"><figure class="shot"><img alt=""><time></time></figure><p></p></dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const escapeHtml = (text) => text.replace(/[&<>"']/g, (c) => ESCAPES[c]);
+
+function inline(text) {
+  return text.split(/(`[^`\n]+`)/).map((part, i) => (i % 2
+    ? `<code>${escapeHtml(part.slice(1, -1))}</code>`
+    : escapeHtml(part)
+        .replace(/\*\*(?=\S)([^*]+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[^*\w])\*(?=\S)([^*\n]+?)\*(?!\w)/g, "$1<em>$2</em>")
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s"]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        .replace(/\b(frame|change|event):(\d+)\b/g, '<button type="button" class="ref" data-ref="$1:$2">$1:$2</button>'))).join("");
+}
+
+function markdown(source) {
+  const lines = source.replace(/\r\n?/g, "\n").split("\n");
+  const html = [];
+  let list = null;
+  let paragraph = [];
+  let fence = null;
+
+  const flushParagraph = () => { if (paragraph.length) html.push(`<p>${paragraph.map(inline).join("<br>")}</p>`); paragraph = []; };
+  const closeList = () => { if (list) html.push(`</${list}>`); list = null; };
+
+  for (const line of lines) {
+    if (fence !== null) {
+      if (/^\s*```/.test(line)) { html.push(`<pre><code>${escapeHtml(fence.join("\n"))}</code></pre>`); fence = null; } else fence.push(line);
+      continue;
+    }
+    if (/^\s*```/.test(line)) { flushParagraph(); closeList(); fence = []; continue; }
+
+    const heading = line.match(/^(#{1,4})\s+(.*)$/);
+    const bullet = line.match(/^\s*[-*•]\s+(.*)$/);
+    const number = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    const item = bullet || number;
+
+    if (!line.trim()) { flushParagraph(); closeList(); continue; }
+    if (heading) { flushParagraph(); closeList(); html.push(`<h4>${inline(heading[2])}</h4>`); continue; }
+    if (item) {
+      flushParagraph();
+      const kind = bullet ? "ul" : "ol";
+      if (list !== kind) { closeList(); html.push(`<${kind}>`); list = kind; }
+      html.push(`<li>${inline(item[1])}</li>`);
+      continue;
+    }
+    closeList();
+    paragraph.push(line);
+  }
+
+  if (fence !== null) html.push(`<pre><code>${escapeHtml(fence.join("\n"))}</code></pre>`);
+  flushParagraph();
+  closeList();
+  return html.join("");
+}
+
+
+function el(tag, props = {}, ...children) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children.flat(2).filter((c) => c != null && c !== false));
+  return node;
+}
+
+const sameDay = (d) => d.toDateString() === new Date().toDateString();
+const clock = (iso, seconds = true) => {
+  const d = new Date(iso);
+  const t = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", ...(seconds ? { second: "2-digit" } : {}) });
+  return sameDay(d) ? t : `${d.toLocaleDateString([], { weekday: "short" })} ${t}`;
+};
+const ago = (iso) => {
+  const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+  const [size, unit] = [[86400, "d"], [3600, "h"], [60, "min"], [1, "s"]].find(([n]) => s >= n) || [1, "s"];
+  return `${Math.round(s / size)} ${unit} ago`;
+};
+const gb = (bytes) => `${(bytes / 1e9).toFixed(1)} GB`;
+const refImage = (ref) => {
+  const [kind, id] = String(ref || "").split(":");
+  return { frame: `/img/frame/${id}`, change: `/img/change/${id}/after`, event: `/img/event/${id}` }[kind];
+};
+
+function zoom(src, at, caption) {
+  const dialog = $("zoom");
+  dialog.querySelector("img").src = src;
+  dialog.querySelector("time").textContent = at ? clock(at) : "";
+  dialog.querySelector("p").textContent = caption;
+  dialog.showModal();
+}
+$("zoom").addEventListener("click", () => $("zoom").close());
+
+function shot(src, at, caption, size = "") {
+  const node = el("figure", { className: `shot ${size}`, tabIndex: 0, role: "button", ariaLabel: `Enlarge ${caption}` },
+    el("img", { src, alt: caption, loading: "lazy" }),
+    at ? el("time", { dateTime: at, textContent: clock(at) }) : null);
+  const open = (e) => { e.preventDefault(); e.stopPropagation(); zoom(src, at, caption); };
+  node.addEventListener("click", open);
+  node.addEventListener("keydown", (e) => (e.key === "Enter" || e.key === " ") && open(e));
+  return node;
+}
+
+function evidenceStrip(items) {
+  return el("div", { className: "evidence" }, items.map((e) => el("figure", {},
+    shot(e.image_url, e.at, e.label), el("figcaption", { textContent: e.label }))));
+}
+
+const steps = {
+  search: ["Searching for", "Searched for", (a) => a.query],
+  facts: ["Searching notes for", "Searched notes for", (a) => a.query],
+  events: ["Listing events", "Listed events", (a) => (a.start || a.end ? `${a.start ? clock(a.start, false) : "start"} to ${a.end ? clock(a.end, false) : "now"}` : null)],
+  look: ["Looking at", "Looked at", (a) => (a.refs || []).join(", ")],
+};
+
+function stepTitle(name, args, done) {
+  const [pending, finished, subject] = steps[name] || [`Running ${name}`, `Ran ${name}`, () => null];
+  const what = subject(args);
+  return [el("span", { className: "verb", textContent: done ? finished : pending }), what ? el("code", { textContent: what }) : null];
+}
+
+function parseRows(output) {
+  try {
+    const items = JSON.parse(output);
+    return Array.isArray(items) && items.every((i) => i && typeof i === "object") ? items : null;
+  } catch {
+    return null;
+  }
+}
+
+function hit(item) {
+  const at = item.captured_at || item.started_at;
+  const score = item.score ?? null;
+  const text = item.summary || item.text;
+  const lead = item.key_frames || item.text != null ? null : refImage(item.ref);
+  return el("div", { className: "hit" },
+    lead ? shot(lead, at, item.ref, "sm") : null,
+    el("div", { className: "hit-body" },
+      el("div", { className: "hit-head" },
+        el("code", { textContent: item.ref || "" }),
+        at && !lead ? el("span", { textContent: clock(at) }) : null,
+        score != null ? el("span", { className: "score", title: `similarity ${score}` }, el("i", {}, el("b", { style: `width:${Math.round(Math.max(0, Math.min(1, score)) * 100)}%` })), score.toFixed(2)) : null),
+      text ? el("span", { className: "hit-text", textContent: text }) : null,
+      item.changes?.length ? el("span", { className: "hit-head" }, item.changes.map((c) => el("span", { className: `k-${c.kind}`, textContent: `${c.kind} ${c.ref}` }))) : null,
+      item.key_frames?.length ? el("div", { className: "thumbs" }, item.key_frames.slice(0, 6).map((r) => shot(refImage(r), null, r, "xs"))) : null));
+}
+
+function found(args, result) {
+  const entries = Object.entries(args);
+  const rows = parseRows(result.output || "");
+  const listing = rows
+    ? (rows.length ? el("div", { className: "hits" }, rows.map(hit)) : el("p", { className: "quiet", textContent: "Nothing matched." }))
+    : result.output ? el("pre", { className: "raw", textContent: result.output }) : null;
+  return el("div", { className: "found" },
+    entries.length ? [el("h3", { textContent: "Input" }), el("dl", { className: "args" }, entries.flatMap(([k, v]) => [el("dt", { textContent: k }), el("dd", { textContent: typeof v === "string" ? v : JSON.stringify(v) })]))] : null,
+    !rows && result.evidence?.length ? [el("h3", { textContent: "Frames" }), evidenceStrip(result.evidence)] : null,
+    listing ? [el("h3", { textContent: "Found" }), listing] : null);
+}
+
+let source = null;
+let stick = true;
+$("thread").addEventListener("scroll", () => {
+  const t = $("thread");
+  stick = t.scrollHeight - t.scrollTop - t.clientHeight < 80;
+});
+const follow = () => { if (stick) $("thread").scrollTop = $("thread").scrollHeight; };
+
+function ask(question) {
+  $("welcome")?.remove();
+  stick = true;
+
+  const list = el("div", { className: "steps" });
+  const answer = el("div", { className: "answer streaming" });
+  let text = "";
+  const show = (value) => { text = value; answer.innerHTML = markdown(text); follow(); };
+  answer.addEventListener("click", (e) => {
+    const ref = e.target.closest(".ref")?.dataset.ref;
+    if (ref) zoom(refImage(ref), null, ref);
+  });
+  const evidence = el("div");
+  const note = el("p", { className: "note", textContent: "Thinking" });
+  $("messages").append(el("article", { className: "turn" },
+    el("div", { className: "question" }, el("p", { textContent: question })), list, answer, evidence, note));
+  follow();
+
+  const calls = new Map();
+  const started = Date.now();
+  const tick = setInterval(() => { note.textContent = `Thinking for ${Math.round((Date.now() - started) / 1000)} s`; }, 500);
+  setBusy(true);
+
+  const finish = () => {
+    clearInterval(tick);
+    answer.classList.remove("streaming");
+    calls.forEach((c) => c.node.classList.replace("pending", "failed"));
+    source?.close();
+    source = null;
+    setBusy(false);
+    $("input").focus();
+  };
+
+  source = new EventSource(`/api/ask?q=${encodeURIComponent(question)}`);
+
+  source.addEventListener("tool_call", (m) => {
+    const call = JSON.parse(m.data);
+    let args = {};
+    try { args = JSON.parse(call.arguments || "{}"); } catch { args = { arguments: call.arguments }; }
+    const summary = el("summary", {}, el("span", { className: "glyph" }), stepTitle(call.name, args, false), el("span", { className: "chev", textContent: "›" }));
+    const node = el("details", { className: "step pending" }, summary);
+    calls.set(call.id, { node, args, name: call.name, summary });
+    list.append(node);
+    show("");
+    follow();
+  });
+
+  source.addEventListener("tool_result", (m) => {
+    const result = JSON.parse(m.data);
+    const call = calls.get(result.id);
+    if (!call) return;
+    call.node.classList.replace("pending", "done");
+    call.summary.replaceChildren(el("span", { className: "glyph" }), ...stepTitle(call.name, call.args, true),
+      el("span", { className: "count", textContent: result.summary }), el("span", { className: "chev", textContent: "›" }));
+    call.node.append(found(call.args, result));
+    follow();
+  });
+
+  source.addEventListener("answer_delta", (m) => show(text + JSON.parse(m.data).text));
+
+  source.addEventListener("answer", (m) => {
+    const final = JSON.parse(m.data);
+    show(final.text);
+    evidence.replaceChildren(...(final.evidence?.length ? [evidenceStrip(final.evidence)] : []));
+    follow();
+  });
+
+  source.addEventListener("stream_error", (m) => {
+    evidence.append(el("p", { className: "error", textContent: JSON.parse(m.data).error }));
+  });
+
+  source.addEventListener("stream_done", (m) => {
+    const count = calls.size;
+    finish();
+    note.textContent = `${count} ${count === 1 ? "step" : "steps"} in ${JSON.parse(m.data).seconds} s`;
+  });
+
+  source.onerror = () => {
+    if (!source) return;
+    evidence.append(el("p", { className: "error", textContent: "Lost the connection to Ghostcam. Check that `ghostcam.py serve` is still running, then ask again." }));
+    finish();
+    note.textContent = "";
+  };
+}
+
+function setBusy(busy) {
+  $("input").disabled = busy;
+  $("send").disabled = busy || !$("input").value.trim();
+}
+
+function grow() {
+  const input = $("input");
+  input.style.height = "auto";
+  input.style.height = `${input.scrollHeight}px`;
+  $("send").disabled = !!source || !input.value.trim();
+}
+
+function submit() {
+  const question = $("input").value.trim();
+  if (!question || source) return;
+  $("input").value = "";
+  grow();
+  ask(question);
+}
+
+$("input").addEventListener("input", grow);
+$("input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit(); }
+});
+$("composer").addEventListener("submit", (e) => { e.preventDefault(); submit(); });
+document.querySelectorAll(".suggestion").forEach((b) => b.addEventListener("click", () => { $("input").value = b.textContent; submit(); }));
+$("room-toggle").addEventListener("click", () => document.body.classList.toggle("room-open"));
+
+function renderSystem(h) {
+  const role = (name) => h.processes.find((p) => p.health.role === name);
+  const ingest = role("ingest");
+  const worker = role("worker");
+  const pending = h.backlog.reduce((n, b) => n + b.pending, 0);
+  const oldest = h.backlog.map((b) => b.oldest).filter(Boolean).sort()[0];
+  const process = (p, missing) => (p
+    ? [p.running ? "ok" : "bad", p.running ? `Running${p.health.last_snapshot_at ? `, snapshot ${ago(p.health.last_snapshot_at)}` : ""}` : "Stopped"]
+    : ["bad", missing]);
+
+  const rows = [
+    ["Ingest", ...process(ingest, "Not running")],
+    ["Worker", ...process(worker, "Not running")],
+    ["Last frame", "", h.latest_frame_at ? ago(h.latest_frame_at) : "Never"],
+    ["Index", pending ? "warn" : "ok", pending ? `${pending} waiting, oldest ${ago(oldest)}` : "Up to date"],
+    ...(h.failing_jobs ? [["Failing", "bad", `${h.failing_jobs} jobs, see ghostcam.py jobs`]] : []),
+    ["Disk", "", h.disk_bytes == null ? `${gb(h.disk_free_bytes)} free` : `${gb(h.disk_bytes)} of ${gb(h.disk_budget_bytes)}, ${gb(h.disk_free_bytes)} free`],
+  ];
+  $("system").replaceChildren(...rows.flatMap(([k, state, v]) => [el("dt", { textContent: k }), el("dd", { className: state, textContent: v })]));
+
+  $("rec").textContent = ingest?.running ? "Live" : "Offline";
+  $("rec").className = `rec ${ingest?.running ? "on" : ""}`;
+
+  const problems = h.processes.filter((p) => p.health.last_problem);
+  $("problem-wrap").hidden = !problems.length;
+  $("problem").replaceChildren(...problems.map((p) => el("span", {}, el("b", { textContent: `${p.health.role}: ` }),
+    `${p.health.last_problem.message} (${clock(p.health.last_problem.at)})`)));
+}
+
+function renderState(items) {
+  $("state").replaceChildren(...(items.length
+    ? items.map((i) => el("li", { className: "item" },
+        shot(i.image_url, i.since, i.label || "Something", "xs"),
+        el("div", { className: "change-text" },
+          el("b", { textContent: i.label ? i.label[0].toUpperCase() + i.label.slice(1) : "Something" }),
+          i.place ? el("p", { textContent: i.place }) : null,
+          el("span", { textContent: `Since ${clock(i.since, false)}, ${ago(i.since)}` }))))
+    : [el("li", {}, el("p", { className: "quiet", textContent: "Nothing tracked in the room right now." }))]));
+}
+
+const KIND_ORDER = ["added", "moved", "removed", "changed"];
+
+function kindCounts(kinds) {
+  const counts = KIND_ORDER.map((k) => [k, kinds.filter((x) => x === k).length]).filter(([, n]) => n);
+  return el("span", { className: "tags" }, counts.map(([k, n], i) => el("span", { className: `k-${k}`, textContent: `${n} ${k}${i < counts.length - 1 ? "," : ""}` })));
+}
+
+function renderActivity(activity) {
+  const when = (a) => a.ended_at ? `${clock(a.started_at, false)} to ${clock(a.ended_at, false)}, ${ago(a.ended_at)}` : `Since ${clock(a.started_at, false)}`;
+  const text = (a) => a.summary || (a.ended_at ? "Describing what happened" : "In progress");
+  $("activity").replaceChildren(...(activity.length
+    ? activity.map((a) => el("li", { className: "activity" },
+        shot(a.image_url, a.started_at, text(a), "xs"),
+        el("div", { className: "change-text" },
+          el("span", { textContent: when(a) }),
+          el("p", { className: a.summary ? "" : "quiet", textContent: text(a) }),
+          a.changes.length ? kindCounts(a.changes) : null)))
+    : [el("li", {}, el("p", { className: "quiet", textContent: "No activity recorded yet." }))]));
+}
+
+let latestUrl = null;
+async function refresh() {
+  try {
+    const room = await (await fetch("/api/room")).json();
+    renderSystem(room.health);
+    renderState(room.state || []);
+    renderActivity(room.activity);
+    if (room.latest && room.latest.image_url !== latestUrl) {
+      latestUrl = room.latest.image_url;
+      $("latest").src = latestUrl;
+      $("live").onclick = () => zoom(latestUrl, room.latest.at, "Latest frame");
+    }
+    $("latest-time").textContent = room.latest ? clock(room.latest.at) : "";
+    $("latest-caption").textContent = room.latest ? `Last frame ${ago(room.latest.at)}` : "Waiting for the first frame";
+  } catch {
+    $("rec").textContent = "Offline";
+    $("rec").className = "rec";
+    $("system").replaceChildren(el("dt", { textContent: "Server" }), el("dd", { className: "bad", textContent: "Unreachable. Is ghostcam.py serve running?" }));
+  }
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

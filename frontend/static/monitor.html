@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghostcam Monitor</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Ccircle cx=%228%22 cy=%228%22 r=%226%22 fill=%22%2317181C%22/%3E%3Ccircle cx=%228%22 cy=%228%22 r=%222.5%22 fill=%22white%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --white: #ffffff;
+    --ink: #17181c;
+    --ink-2: #5f6571;
+    --ink-3: #9aa0aa;
+    --hair: #e7e9ed;
+    --surface: #f5f6f8;
+    --good: #2f855a;
+    --warn: #a16207;
+    --bad: #c53030;
+    --bar: #5f6571;
+    --sans: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--white); color: var(--ink); }
+  body { font: 15px/1.6 var(--sans); font-feature-settings: "tnum" 1; -webkit-font-smoothing: antialiased; }
+  code, .mono { font: 500 12.5px/1.4 var(--mono); }
+
+  .bar { display: flex; align-items: center; gap: 20px; padding: 16px 24px; }
+  .mark { font-weight: 600; font-size: 16px; letter-spacing: -0.015em; }
+  nav { display: flex; gap: 2px; }
+  nav a { font-size: 14px; color: var(--ink-2); text-decoration: none; padding: 4px 10px; border-radius: 8px; }
+  nav a:hover { background: var(--surface); }
+  nav a[aria-current="page"] { color: var(--ink); background: var(--surface); }
+  .updated { margin-left: auto; font-size: 13px; color: var(--ink-3); }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 8px 24px 64px; }
+  h1 { font-size: 30px; line-height: 1.2; font-weight: 500; letter-spacing: -0.025em; margin: 24px 0 4px; }
+  .lede { color: var(--ink-2); margin: 0 0 28px; }
+  h2 { font-size: 14px; font-weight: 600; margin: 0 0 12px; letter-spacing: -0.005em; }
+  h2 span { color: var(--ink-3); font-weight: 400; margin-left: 6px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 36px; }
+  .tile { background: var(--surface); border-radius: 12px; padding: 14px 16px; min-height: 96px; display: flex; flex-direction: column; gap: 4px; }
+  .tile dt { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 7px; }
+  .tile dd { margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.2; }
+  .tile .sub { font-size: 12.5px; color: var(--ink-2); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--hair); flex: none; }
+  .ok .dot { background: var(--good); } .warn .dot { background: var(--warn); } .bad .dot { background: var(--bad); }
+
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 40px; }
+  section.wide { grid-column: 1 / -1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 12.5px; padding: 0 10px 6px 0; border-bottom: 1px solid var(--hair); }
+  td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--hair); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  td.muted { color: var(--ink-2); }
+  td.err { color: var(--ink-2); font: 12px/1.4 var(--mono); word-break: break-word; }
+  .quiet { color: var(--ink-3); font-size: 13.5px; margin: 0; }
+
+  .meter { position: relative; height: 8px; border-radius: 4px; background: var(--surface); overflow: hidden; min-width: 80px; }
+  .meter b { display: block; height: 100%; border-radius: 4px; background: var(--bar); min-width: 2px; }
+  td.meter-cell { width: 34%; }
+
+  .budget { margin-bottom: 14px; }
+  .budget .meter { height: 10px; border-radius: 5px; }
+  .budget .meter b { border-radius: 5px; }
+  .budget p { margin: 6px 0 0; font-size: 13px; color: var(--ink-2); }
+
+  .state { display: inline-flex; align-items: center; gap: 7px; }
+  .problem { font-size: 13px; color: var(--ink-2); margin: 0 0 6px; }
+  .problem b { color: var(--warn); font-weight: 600; }
+
+  .offline { background: #fff5f5; color: var(--bad); border-radius: 10px; padding: 10px 14px; font-size: 14px; margin-bottom: 20px; }
+
+  @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); } .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { main, .bar { padding-left: 16px; padding-right: 16px; } h1 { font-size: 26px; } td.meter-cell { width: 28%; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <span class="mark">Ghostcam</span>
+  <nav><a href="/">Ask</a><a href="/monitor" aria-current="page">Monitor</a></nav>
+  <span class="updated" id="updated">Loading</span>
+</header>
+
+<main>
+  <h1>Monitor</h1>
+  <p class="lede">Processes, background work, vectors and storage. Refreshes every 10 seconds.</p>
+
+  <div class="offline" id="offline" hidden>Can't reach the server. Is <code>ghostcam.py serve</code> running?</div>
+
+  <dl class="tiles" id="tiles"></dl>
+
+  <div class="grid">
+    <section>
+      <h2>Queues <span>waiting in Huey</span></h2>
+      <div id="queues"></div>
+    </section>
+
+    <section>
+      <h2>Pending work <span>derived from Postgres</span></h2>
+      <div id="backlog"></div>
+    </section>
+
+    <section>
+      <h2>Embedding vectors <span id="vector-total"></span></h2>
+      <div id="vectors"></div>
+    </section>
+
+    <section>
+      <h2>Records</h2>
+      <div id="counts"></div>
+    </section>
+
+    <section>
+      <h2>Disk <span id="disk-total"></span></h2>
+      <div class="budget" id="budget"></div>
+      <div id="disk"></div>
+    </section>
+
+    <section>
+      <h2>Database <span id="db-total"></span></h2>
+      <div id="tables"></div>
+    </section>
+
+    <section class="wide">
+      <h2>Failing jobs <span id="failure-count"></span></h2>
+      <div id="failures"></div>
+    </section>
+
+    <section class="wide" id="problems-wrap" hidden>
+      <h2>Last problems</h2>
+      <div id="problems"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+function el(tag, props = {}, ...children) {
+  const node = Object.assign(document.createElement(tag), props);
+  node.append(...children.flat(2).filter((c) => c != null && c !== false));
+  return node;
+}
+
+const number = (n) => n.toLocaleString();
+const bytes = (n) => {
+  const [size, unit] = [[1e12, "TB"], [1e9, "GB"], [1e6, "MB"], [1e3, "KB"]].find(([s]) => n >= s) || [1, "B"];
+  return `${(n / size).toFixed(size === 1 ? 0 : 1)} ${unit}`;
+};
+const ago = (iso) => {
+  const s = Math.max(0, (Date.now() - new Date(iso)) / 1000);
+  const [size, unit] = [[86400, "d"], [3600, "h"], [60, "min"], [1, "s"]].find(([n]) => s >= n) || [1, "s"];
+  return `${Math.round(s / size)} ${unit} ago`;
+};
+const clock = (iso) => new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const short = (model) => model.split("/").pop();
+
+function tile(label, value, sub, state = "") {
+  return el("div", { className: `tile ${state}` },
+    el("dt", {}, state ? el("span", { className: "dot" }) : null, label),
+    el("dd", { textContent: value }),
+    sub ? el("span", { className: "sub", textContent: sub }) : null);
+}
+
+function table(headers, rows, empty) {
+  if (!rows.length) return el("p", { className: "quiet", textContent: empty });
+  return el("table", {},
+    el("thead", {}, el("tr", {}, headers.map(([text, cls]) => el("th", { className: cls || "", textContent: text })))),
+    el("tbody", {}, rows.map((cells) => el("tr", {}, cells))));
+}
+
+const td = (text, cls = "") => el("td", { className: cls, textContent: text });
+
+function meter(value, max, tip) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return el("td", { className: "meter-cell" },
+    el("div", { className: "meter", title: tip, role: "img", ariaLabel: tip }, el("b", { style: `width:${pct}%` })));
+}
+
+function renderTiles(m) {
+  const h = m.health;
+  const role = (name) => h.processes.find((p) => p.health.role === name);
+  const proc = (name) => {
+    const p = role(name);
+    if (!p) return tile(name[0].toUpperCase() + name.slice(1), "Not running", "no heartbeat", "bad");
+    return tile(name[0].toUpperCase() + name.slice(1), p.running ? "Running" : "Stopped",
+      `pid ${p.health.pid}, heartbeat ${Math.round(p.heartbeat_age_s)} s ago`, p.running ? "ok" : "bad");
+  };
+  const service = m.embedding_service;
+  const pending = m.backlog.reduce((n, b) => n + b.pending, 0);
+  const waiting = m.queues.reduce((n, q) => n + q.waiting, 0);
+  const vectors = m.database.vectors.filter((v) => v.model === m.embedding_model).reduce((n, v) => n + v.vectors, 0);
+  const used = m.disk.length ? m.disk.reduce((n, p) => n + p.bytes, 0) : h.disk_bytes;
+
+  $("tiles").replaceChildren(
+    proc("ingest"),
+    proc("worker"),
+    tile("Embeddings service", service.up ? "Up" : "Down", service.up ? `${short(service.model || "")} on ${service.device}` : service.url, service.up ? "ok" : "bad"),
+    tile("Last frame", h.latest_frame_at ? ago(h.latest_frame_at) : "Never", h.latest_frame_at ? clock(h.latest_frame_at) : "no frames yet",
+      h.latest_frame_at && Date.now() - new Date(h.latest_frame_at) < 120000 ? "ok" : "warn"),
+    tile("Pending work", number(pending), `${number(waiting)} queued in Huey`, pending ? "warn" : "ok"),
+    tile("Failing jobs", number(m.failures.length), m.failures.length ? "see the table below" : "none", m.failures.length ? "bad" : "ok"),
+    tile("Vectors", number(vectors), short(m.embedding_model)),
+    tile("Disk used", used == null ? "Measuring" : bytes(used), `of ${bytes(h.disk_budget_bytes)} budget, ${bytes(h.disk_free_bytes)} free`,
+      used != null && used > h.disk_budget_bytes * 0.9 ? "warn" : ""),
+  );
+}
+
+function renderQueues(m) {
+  $("queues").replaceChildren(table(
+    [["Queue"], ["Waiting", "num"], ["Workers", "num"], ["Max in flight", "num"]],
+    m.queues.map((q) => [td(q.name, "mono"), td(number(q.waiting), "num"), td(q.workers, "num muted"), td(q.max_inflight, "num muted")]),
+    "No queues."));
+
+  $("backlog").replaceChildren(table(
+    [["Kind"], ["Pending", "num"], ["Oldest", "num"]],
+    m.backlog.map((b) => [td(b.kind.replaceAll("_", " ")), td(number(b.pending), "num"), td(b.oldest ? ago(b.oldest) : "-", "num muted")]),
+    "Nothing pending."));
+}
+
+function renderVectors(m) {
+  const rows = m.database.vectors;
+  const max = Math.max(0, ...rows.map((v) => v.vectors));
+  const total = rows.reduce((n, v) => n + v.vectors, 0);
+  $("vector-total").textContent = `${number(total)} total, search index ${bytes(m.database.vector_index_bytes)}`;
+  $("vectors").replaceChildren(table(
+    [["Kind"], ["Model"], ["Count", "num"], [""], ["Newest", "num"]],
+    rows.map((v) => [
+      td(v.owner),
+      td(short(v.model) + (v.model === m.embedding_model ? "" : " (old)"), "muted"),
+      td(number(v.vectors), "num"),
+      meter(v.vectors, max, `${v.owner}: ${number(v.vectors)} vectors`),
+      td(v.newest ? ago(v.newest) : "-", "num muted"),
+    ]),
+    "No vectors yet."));
+}
+
+function renderCounts(m) {
+  const c = m.database.counts;
+  const rows = [
+    ["Events", number(c.events), `${number(c.events_last_hour)} in the last hour, ${number(c.events_last_day)} today`],
+    ["Captioned", number(c.captioned), c.events ? `${Math.round((c.captioned / c.events) * 100)}% of events` : ""],
+    ["Scene changes", number(c.changes), ""],
+    ["Frames", number(c.frames), `${number(c.frames_on_disk)} as JPEG, ${number(c.frames_in_video)} in video`],
+    ["Summaries", number(c.hour_summaries + c.day_summaries), `${number(c.hour_summaries)} hourly, ${number(c.day_summaries)} daily`],
+  ];
+  $("counts").replaceChildren(table([["Record"], ["Count", "num"], ["Detail"]],
+    rows.map(([k, v, d]) => [td(k), td(v, "num"), td(d, "muted")]), ""));
+}
+
+function renderDisk(m) {
+  const h = m.health;
+  const parts = m.disk;
+  const total = parts.reduce((n, p) => n + p.bytes, 0);
+  const max = Math.max(0, ...parts.map((p) => p.bytes));
+  const used = total;
+  const tip = `${bytes(used)} of ${bytes(h.disk_budget_bytes)} budget`;
+  $("disk-total").textContent = `${bytes(total)} in data/`;
+  $("budget").replaceChildren(
+    el("div", { className: "meter", title: tip, role: "img", ariaLabel: tip }, el("b", { style: `width:${Math.min(100, (used / h.disk_budget_bytes) * 100)}%` })),
+    el("p", { textContent: `${tip} (${Math.round((used / h.disk_budget_bytes) * 100)}%), ${bytes(h.disk_free_bytes)} free on the volume` }));
+  $("disk").replaceChildren(table([["Folder or file"], ["Size", "num"], [""]],
+    parts.map((p) => [td(p.name, "mono"), td(bytes(p.bytes), "num"), meter(p.bytes, max, `${p.name}: ${bytes(p.bytes)}`)]),
+    "data/ is empty."));
+}
+
+function renderTables(m) {
+  const rows = m.database.tables;
+  const max = Math.max(0, ...rows.map((t) => t.bytes));
+  $("db-total").textContent = bytes(m.database.database_bytes);
+  $("tables").replaceChildren(table([["Table"], ["Rows", "num"], ["Size", "num"], [""]],
+    rows.map((t) => [td(t.name, "mono"), td(number(t.rows), "num"), td(bytes(t.bytes), "num"), meter(t.bytes, max, `${t.name}: ${bytes(t.bytes)}`)]),
+    "No tables."));
+}
+
+function renderFailures(m) {
+  $("failure-count").textContent = m.failures.length ? `${m.failures.length}, clear with ghostcam.py jobs --retry` : "";
+  $("failures").replaceChildren(table(
+    [["Kind"], ["Key"], ["Attempts", "num"], ["Retry"], ["Last error"]],
+    m.failures.map((f) => [
+      td(f.kind.replaceAll("_", " ")),
+      td(f.key, "mono"),
+      td(f.attempts, "num"),
+      td(new Date(f.retry_at).getFullYear() > 9000 ? "Skipped" : clock(f.retry_at), "muted"),
+      td(f.last_error, "err"),
+    ]),
+    "No failing jobs."));
+
+  const problems = m.health.processes.filter((p) => p.health.last_problem);
+  $("problems-wrap").hidden = !problems.length;
+  $("problems").replaceChildren(...problems.map((p) => el("p", { className: "problem" },
+    el("b", { textContent: `${p.health.role}: ` }), `${p.health.last_problem.message} (${clock(p.health.last_problem.at)})`)));
+}
+
+async function refresh() {
+  try {
+    const m = await (await fetch("/api/monitor")).json();
+    $("offline").hidden = true;
+    renderTiles(m);
+    renderQueues(m);
+    renderVectors(m);
+    renderCounts(m);
+    renderDisk(m);
+    renderTables(m);
+    renderFailures(m);
+    $("updated").textContent = `Updated ${new Date(m.generated_at).toLocaleTimeString()}`;
+  } catch {
+    $("offline").hidden = false;
+    $("updated").textContent = "Offline";
+  }
+}
+
+refresh();
+setInterval(refresh, 10000);
+</script>
+</body>
+</html>

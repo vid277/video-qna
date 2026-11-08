@@ -1,0 +1,18 @@
+# secrets
+.env
+cameras.yaml
+
+# runtime data: frames, videos, job queue, logs
+data/
+data-*
+*.log
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# os
+.DS_Store

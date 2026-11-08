@@ -1,0 +1,69 @@
+name: ghost
+
+x-app: &app
+  build: .
+  image: ghost
+  restart: unless-stopped
+  environment:
+    TZ: ${TZ:-America/Los_Angeles}
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+  volumes:
+    - ./ingest.yaml:/config/ingest.yaml:ro
+    - ./jobs.yaml:/app/jobs.yaml:ro
+    - ./cameras.yaml:/app/cameras.yaml:ro
+    - ./.env:/app/.env:ro
+    - ghost-data:/app/data
+    - ghost-cache:/root/.cache
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ghost
+      POSTGRES_DB: ghost
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ghost-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "ghost", "-d", "ghost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  embeddings:
+    build: ./embeddings
+    image: ghost-embeddings
+    restart: unless-stopped
+    volumes:
+      - ghost-models:/cache
+
+  migrate:
+    <<: *app
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
+
+  ingest:
+    <<: *app
+    command: ["python", "ghostcam.py", "ingest"]
+
+  worker:
+    <<: *app
+    command: ["python", "ghostcam.py", "worker"]
+
+  web:
+    <<: *app
+    command: ["python", "ghostcam.py", "serve", "--host", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:8765:8765"
+
+volumes:
+  ghost-data:
+  ghost-db:
+  ghost-cache:
+  ghost-models:

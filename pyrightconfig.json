@@ -1,0 +1,13 @@
+{
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    "."
+  ],
+  "exclude": [
+    "embeddings",
+    "experiments",
+    "**/__pycache__",
+    ".venv"
+  ]
+}

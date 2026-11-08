@@ -1,0 +1,22 @@
+queue_file: data/jobs.db
+queues:
+  embed:
+    workers: 1
+    max_inflight: 2
+  index:
+    workers: 2
+    max_inflight: 4
+  serial:
+    workers: 1
+    max_inflight: 1
+  maintenance:
+    workers: 1
+    max_inflight: 1
+dispatch_every_s: 5
+max_attempts: 5
+backoff_first_s: 60
+backoff_max_s: 21600
+outage_pause_s: 30
+timezone: America/Los_Angeles
+vector_thin_every_s: 86400
+vector_keep_days: 30

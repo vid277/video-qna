@@ -1,0 +1,19 @@
+cameras:
+  - name: ghostcam
+    host: 192.168.1.50
+    username: admin
+    password: ""
+    channel: 0
+    rtsp_port: 554
+    snapshot_quality: main
+    stream_quality: main
+    ptz:
+      speed: 32
+      seconds: 0.5
+    quality:
+      main:
+        frame_rate: 20
+        bit_rate: 5120
+      sub:
+        frame_rate: 10
+        bit_rate: 1024

@@ -1,0 +1,11 @@
+.venv
+embeddings
+**/__pycache__
+.pytest_cache
+.DS_Store
+.env
+cameras.yaml
+data
+data-*
+*.log
+experiments
