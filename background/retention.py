@@ -4,8 +4,8 @@ import asyncio
 from datetime import datetime, timedelta
 from itertools import accumulate, groupby
 
-from ingest.runtime import archive, config, store
 from models import StoredFrame
+from store.runtime import archive, config, store
 
 
 async def apply_retention(camera_id: str, now: datetime) -> None:

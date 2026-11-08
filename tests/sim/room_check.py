@@ -8,11 +8,19 @@ import numpy as np
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest.db import EMBEDDING_DIM, SceneChange
-from ingest.room import RoomLog
-from ingest.store import Store
+from background.room import RoomLog
 from models import Box, Change, ChangeKind, EmbeddingRow, Record, RoomKind, VectorOwner
-from tests.sim.scenario import DAY_S, PLACES, SETTLE_AFTER_S, Expectation, Scenario, ordered, state_at
+from store.db import EMBEDDING_DIM, SceneChange
+from store.store import Store
+from tests.sim.scenario import (
+    DAY_S,
+    PLACES,
+    SETTLE_AFTER_S,
+    Expectation,
+    Scenario,
+    ordered,
+    state_at,
+)
 from tests.sim.score import Found, Report, clock
 
 CAMERA = "sim"

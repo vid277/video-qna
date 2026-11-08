@@ -11,4 +11,4 @@
 - Each camera brand subclasses the `Camera` ABC in `camera.py` (e.g. `reolink.py`).
 - Run with `.venv/bin/python ghostcam.py ...`; `pyright` must pass with 0 errors.
 - Run `ghostcam.py ingest` (capture) and `ghostcam.py worker` (embeddings, captions, summaries, cleanup) as separate processes.
-- Background work is a `JobKind` in `ingest/tasks.py`: its state is derived from Postgres, jobs must be idempotent, and the Huey queue (`jobs/`) only carries keys.
+- Background work is a `JobKind` in `background/tasks.py`: its state is derived from Postgres, jobs must be idempotent, and the Huey queue (`jobs/`) only carries keys.

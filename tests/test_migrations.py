@@ -9,7 +9,7 @@ from alembic.migration import MigrationContext
 from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
 
-from ingest.db import Base, sqlalchemy_url
+from store.db import Base, sqlalchemy_url
 
 ROOT = Path(__file__).resolve().parents[1]
 

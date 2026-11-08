@@ -6,18 +6,18 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
+from aiohttp.test_utils import TestClient, TestServer
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from aiohttp.test_utils import TestClient, TestServer
 
-from ingest import images
-from ingest.archive import FrameArchive
-from ingest.health import Heartbeat
-from ingest.db import SceneChange
-from ingest.store import Store
-from models import Box, Change, ChangeKind, Record
-from tests.factory import CAMERA, add_frame, picture
 from frontend.server import Site
+from models import Box, Change, ChangeKind, Record
+from monitoring.health import Heartbeat
+from store import images
+from store.archive import FrameArchive
+from store.db import SceneChange
+from store.store import Store
+from tests.factory import CAMERA, add_frame, picture
 
 pytestmark = pytest.mark.usefixtures("runtime")
 

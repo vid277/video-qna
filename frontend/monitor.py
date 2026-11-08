@@ -9,10 +9,10 @@ import aiohttp
 from aiohttp import web
 from yarl import URL
 
-from ingest import health
-from ingest.runtime import config, jobs_config, store
 from jobs.queue import open_queues
 from models.monitor import DiskPart, MonitorView, QueueStat, ServiceStat
+from monitoring import health
+from store.runtime import config, jobs_config, store
 
 DISK_CACHE_S = 60
 SERVICE_TIMEOUT_S = 2

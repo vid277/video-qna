@@ -5,7 +5,6 @@ import numpy as np
 from cv2.typing import MatLike
 from numpy.typing import NDArray
 
-
 type Image = MatLike
 type Mask = NDArray[np.bool_]
 

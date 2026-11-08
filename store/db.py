@@ -11,7 +11,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from models import ChangeKind, StoredChange, StoredFrame
 
-
 EMBEDDING_DIM = 1024
 EARLIEST = datetime.min.replace(tzinfo=UTC)
 LATEST = datetime.max.replace(tzinfo=UTC)

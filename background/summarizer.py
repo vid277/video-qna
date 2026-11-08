@@ -3,11 +3,11 @@ from __future__ import annotations
 import logging
 from zoneinfo import ZoneInfo
 
-from ingest.runtime import config, jobs_config, store
-from ingest.store import PERIOD_STEP
 from models.jobs import Period, SummaryInput, SummaryWork
 from openrouter import OpenRouter, text_part
 from prompts import render
+from store.runtime import config, jobs_config, store
+from store.store import PERIOD_STEP
 
 SCHEMA = {
     "type": "object",

@@ -15,25 +15,25 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-import ingest.facts
+import background.room
+import background.tasks
+import embeddings.facts
 import ingest.pipeline
-import ingest.room
-import ingest.runtime
-import ingest.tasks
-from ingest import images
-from ingest.archive import FrameArchive
-from ingest.db import Event, SceneChange
-from ingest.facts import FactIndex
+import store.runtime as runtime
+from background.room import RoomLog
+from embeddings.facts import FactIndex
 from ingest.pipeline import IngestPipeline
-from ingest.room import RoomLog
-from ingest.store import Store
 from models import Answer, Box, ChangeKind, IngestConfig, Snapshot, ToolResult
 from models.camera import StreamQuality
 from openrouter import Message, OpenRouter, Part
 from recall.agent import Agent
+from store import images
+from store.archive import FrameArchive
+from store.db import Event, SceneChange
+from store.store import Store
 from tests.test_tracker import KEYS, quiet_drop
 
-WIRED_PACKAGES = {"ingest", "recall", "frontend"}
+WIRED_PACKAGES = {"store", "ingest", "embeddings", "background", "monitoring", "recall", "frontend"}
 LABEL = {"category": "object", "label": "yellow keys", "place": "on the desk"}
 CAPTION = {"summary": "Someone put yellow keys on the desk.", "new": ["yellow keys on the desk"], "facts": ["yellow keys placed on the desk"], "objects": ["keys"]}
 
@@ -112,11 +112,11 @@ async def wired(monkeypatch: pytest.MonkeyPatch, config: IngestConfig, store: St
     """Points every module's shared config, store, archive, room log and fact index at the test database."""
     fact_index = FactIndex(config.database_url, config.embedding_model)
     swap = {
-        id(ingest.runtime.config): config,
-        id(ingest.runtime.store): store,
-        id(ingest.runtime.archive): archive,
-        id(ingest.room.room): room_log,
-        id(ingest.facts.facts): fact_index,
+        id(runtime.config): config,
+        id(runtime.store): store,
+        id(runtime.archive): archive,
+        id(background.room.room): room_log,
+        id(embeddings.facts.facts): fact_index,
     }
 
     for module in [m for name, m in list(sys.modules.items()) if name.split(".")[0] in WIRED_PACKAGES]:
@@ -133,7 +133,7 @@ async def wired(monkeypatch: pytest.MonkeyPatch, config: IngestConfig, store: St
 
 async def run_jobs(client: OpenRouter) -> dict[str, int]:
     """What the worker does, minus the queue: run every kind's pending work until none is left."""
-    kinds, ran = ingest.tasks.index_kinds(client), {}
+    kinds, ran = background.tasks.index_kinds(client), {}
 
     for _ in range(10):
         pending = [(kind, key) for kind in kinds for key in await kind.find(100)]

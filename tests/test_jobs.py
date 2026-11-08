@@ -10,13 +10,30 @@ from huey import Huey, MemoryHuey
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest.archive import FrameArchive
-from ingest.db import Embedding, Fact
-from ingest.store import Store
 from jobs.scheduler import JobKind, Scheduled, Scheduler
-from models import Box, Caption, Change, ChangeKind, EmbeddingRow, IngestConfig, VectorOwner
-from models.jobs import Backoff, IndexKind, Job, JobsConfig, Period, QueueName, QueueSettings, SummaryWork
+from models import (
+    Box,
+    Caption,
+    Change,
+    ChangeKind,
+    EmbeddingRow,
+    IngestConfig,
+    VectorOwner,
+)
+from models.jobs import (
+    Backoff,
+    IndexKind,
+    Job,
+    JobsConfig,
+    Period,
+    QueueName,
+    QueueSettings,
+    SummaryWork,
+)
 from openrouter import OpenRouterError
+from store.archive import FrameArchive
+from store.db import Embedding, Fact
+from store.store import Store
 from tests.factory import CAMERA, T0, add_frame, mark_key
 
 VECTOR = [0.1] * 1024
@@ -398,6 +415,6 @@ def _quiet_huey(caplog: pytest.LogCaptureFixture) -> None:
     ],
 )
 def test_only_unreachable_or_busy_services_count_as_outages(error: BaseException, outage: bool) -> None:
-    from ingest.tasks import is_outage
+    from background.tasks import is_outage
 
     assert is_outage(error) is outage

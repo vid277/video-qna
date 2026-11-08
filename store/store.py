@@ -3,14 +3,26 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Sequence
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import ColumnElement, Select, Text, and_, cast, delete, exists, func, literal, or_, select, text, tuple_, update
+from sqlalchemy import (
+    ColumnElement,
+    Select,
+    Text,
+    and_,
+    cast,
+    delete,
+    exists,
+    func,
+    literal,
+    or_,
+    select,
+    text,
+    tuple_,
+    update,
+)
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import InstrumentedAttribute, aliased
 
-from ingest.db import EARLIEST, LATEST, Embedding, Event, Fact, Frame, JobFailure, SceneChange, Summary, sqlalchemy_url
-from models.jobs import Backlog, Backoff, Failure, IndexKind, Period, SummaryInput, SummaryWork
-from models.monitor import Counts, DatabaseStats, TableStat, VectorStat
 from models import (
     Box,
     Caption,
@@ -25,6 +37,28 @@ from models import (
     StoredChange,
     StoredFrame,
     VectorOwner,
+)
+from models.jobs import (
+    Backlog,
+    Backoff,
+    Failure,
+    IndexKind,
+    Period,
+    SummaryInput,
+    SummaryWork,
+)
+from models.monitor import Counts, DatabaseStats, TableStat, VectorStat
+from store.db import (
+    EARLIEST,
+    LATEST,
+    Embedding,
+    Event,
+    Fact,
+    Frame,
+    JobFailure,
+    SceneChange,
+    Summary,
+    sqlalchemy_url,
 )
 
 REF_PREFIX = {

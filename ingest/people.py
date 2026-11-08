@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import cv2
 import torch
-from torchvision.models.detection import SSDLite320_MobileNet_V3_Large_Weights, ssdlite320_mobilenet_v3_large
+from torchvision.models.detection import (
+    SSDLite320_MobileNet_V3_Large_Weights,
+    ssdlite320_mobilenet_v3_large,
+)
 
-from ingest.images import Image
 from models import Box
+from store.images import Image
 
 COCO_PERSON = 1
 DETECT_WIDTH = 640

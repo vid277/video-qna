@@ -4,9 +4,9 @@ import argparse
 import time
 from pathlib import Path
 
-from ingest import images
 from ingest.changes import ChangeTracker, SceneWatcher
 from models import IngestConfig
+from store import images
 from tests.sim import library
 from tests.sim.render import Renderer
 from tests.sim.scenario import Scenario, expectations, samples

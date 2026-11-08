@@ -12,11 +12,8 @@ import numpy as np
 from pydantic import ValidationError
 from sqlalchemy.exc import DBAPIError
 
-from ingest.db import EMBEDDING_DIM
-from ingest.facts import facts
-from ingest.room import room
-from ingest.runtime import archive, config, store
-from ingest.views import frame_crops, frame_image
+from background.room import room
+from embeddings.facts import facts
 from models import (
     Answer,
     AnswerDelta,
@@ -35,6 +32,9 @@ from models import (
 )
 from openrouter import Message, OpenRouter, Part, image_part, text_part
 from prompts import render
+from store.db import EMBEDDING_DIM
+from store.runtime import archive, config, store
+from store.views import frame_crops, frame_image
 
 MAX_LOOK_IMAGES = 8
 MAX_TOOL_CALLS = 5

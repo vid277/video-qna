@@ -7,10 +7,10 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from ingest import health
-from ingest.health import Heartbeat, ProblemRecorder
 from models import IngestConfig
 from models.health import ProcessHealth
+from monitoring import health
+from monitoring.health import Heartbeat, ProblemRecorder
 
 pytestmark = pytest.mark.usefixtures("runtime")
 

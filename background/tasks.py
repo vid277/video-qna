@@ -8,17 +8,17 @@ from datetime import UTC, datetime, timedelta
 import aiohttp
 from sqlalchemy.exc import InterfaceError, OperationalError
 
-from ingest.captioner import Captioner
-from ingest.embedder import Embedder
-from ingest.retention import apply_retention
-from ingest.facts import facts
-from ingest.room import room
-from ingest.runtime import config, jobs_config, store
-from ingest.summarizer import Summarizer
+from background.captioner import Captioner
+from background.retention import apply_retention
+from background.room import room
+from background.summarizer import Summarizer
+from embeddings.embedder import Embedder
+from embeddings.facts import facts
 from jobs.scheduler import JobKind, Scheduled
 from models import RoomKind, TextKind
 from models.jobs import IndexKind, Period, QueueName
 from openrouter import OpenRouter, OpenRouterError
+from store.runtime import config, jobs_config, store
 
 OUTAGES = (aiohttp.ClientConnectionError, asyncio.TimeoutError, ConnectionError, OperationalError, InterfaceError)
 UNAVAILABLE = {429, 502, 503, 529}

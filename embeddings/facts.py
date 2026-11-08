@@ -5,10 +5,20 @@ from datetime import datetime
 from sqlalchemy import Text, cast, exists, func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from ingest.db import EARLIEST, EMBEDDING_DIM, LATEST, Embedding, Event, Fact, JobFailure, sqlalchemy_url
-from ingest.runtime import config, store
 from models import EmbeddingRow, FactHit, TextKind, VectorOwner
 from openrouter import OpenRouter, text_part
+from store.db import (
+    EARLIEST,
+    EMBEDDING_DIM,
+    LATEST,
+    Embedding,
+    Event,
+    Fact,
+    JobFailure,
+    sqlalchemy_url,
+)
+from store.runtime import config, store
+
 
 class FactIndex:
     """Caption facts as text vectors, so a question finds descriptions by meaning, not exact words."""

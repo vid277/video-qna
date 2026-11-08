@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ingest import images
-from ingest.runtime import archive, config
 from models import ChangeKind, StoredChange, StoredFrame
+from store import images
+from store.runtime import archive, config
 
 
 def model_image(jpeg: bytes) -> bytes:

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ingest.archive import FrameArchive
-from ingest.store import Store
 from models import IngestConfig
 from models.jobs import JobsConfig
+from store.archive import FrameArchive
+from store.store import Store
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "ingest.yaml"

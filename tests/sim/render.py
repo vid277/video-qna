@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 from numpy.typing import NDArray
 
-from ingest import images
 from models import Box
+from store import images
 from tests.sim.scenario import (
     CHAIR,
     DAY_S,

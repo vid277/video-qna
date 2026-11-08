@@ -8,10 +8,18 @@ import pytest
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest.db import EMBEDDING_DIM, SceneChange
-from ingest.room import RoomLog
-from ingest.store import Store
-from models import Box, Change, ChangeKind, EmbeddingRow, IngestConfig, RoomKind, VectorOwner
+from background.room import RoomLog
+from models import (
+    Box,
+    Change,
+    ChangeKind,
+    EmbeddingRow,
+    IngestConfig,
+    RoomKind,
+    VectorOwner,
+)
+from store.db import EMBEDDING_DIM, SceneChange
+from store.store import Store
 from tests.factory import CAMERA, T0
 
 COUCH = Box(x=100, y=100, w=40, h=20)
@@ -101,7 +109,7 @@ async def test_a_different_object_gets_its_own_item(store: Store, db: async_sess
 
 
 def test_label_replies_with_plain_string_enums_are_accepted() -> None:
-    from ingest.room import parse_label
+    from background.room import parse_label
 
     label = parse_label({"category": "object", "label": "sheet of paper", "place": "on the desk"})
 

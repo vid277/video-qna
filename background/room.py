@@ -11,13 +11,23 @@ from sqlalchemy import ColumnElement, Text, cast, exists, func, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import aliased
 
-from ingest import images
-from ingest.db import Embedding, Event, Frame, JobFailure, SceneChange, sqlalchemy_url
-from ingest.runtime import archive, config
-from ingest.views import model_image
-from models import Box, ChangeCategory, ChangeKind, ChangeLabel, ItemChange, RoomItem, RoomKind, StoredFrame, VectorOwner
+from models import (
+    Box,
+    ChangeCategory,
+    ChangeKind,
+    ChangeLabel,
+    ItemChange,
+    RoomItem,
+    RoomKind,
+    StoredFrame,
+    VectorOwner,
+)
 from openrouter import OpenRouter, image_part, text_part
 from prompts import render
+from store import images
+from store.db import Embedding, Event, Frame, JobFailure, SceneChange, sqlalchemy_url
+from store.runtime import archive, config
+from store.views import model_image
 
 PRESENT = {ChangeKind.ADDED.value, ChangeKind.MOVED.value, ChangeKind.CHANGED.value}
 OUTLINE = (0, 0, 255)

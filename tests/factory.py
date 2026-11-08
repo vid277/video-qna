@@ -10,10 +10,10 @@ from numpy.typing import NDArray
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest import images
-from ingest.archive import FrameArchive
-from ingest.db import Frame
-from ingest.store import Store
+from store import images
+from store.archive import FrameArchive
+from store.db import Frame
+from store.store import Store
 
 CAMERA = "cam1"
 T0 = datetime(2026, 10, 1, 10, 0, tzinfo=UTC)

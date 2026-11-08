@@ -8,9 +8,9 @@ import cv2
 import numpy as np
 import pytest
 
-from ingest import images
-from ingest.archive import FrameArchive
 from models import VideoEncoder
+from store import images
+from store.archive import FrameArchive
 from tests.factory import T0
 
 

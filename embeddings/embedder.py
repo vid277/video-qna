@@ -4,11 +4,11 @@ import asyncio
 import logging
 from datetime import datetime
 
-from ingest import views
-from ingest.db import EMBEDDING_DIM
-from ingest.runtime import archive, config, store
 from models import EmbeddingRow, EventWork, StoredChange, StoredFrame, VectorOwner
 from openrouter import OpenRouter, Part, image_part
+from store import views
+from store.db import EMBEDDING_DIM
+from store.runtime import archive, config, store
 
 log = logging.getLogger(__name__)
 

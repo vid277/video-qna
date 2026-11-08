@@ -6,8 +6,8 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from ingest.db import Base, sqlalchemy_url
-from ingest.runtime import config as ingest_config
+from store.db import Base, sqlalchemy_url
+from store.runtime import config as ingest_config
 
 config = context.config
 if config.config_file_name is not None:

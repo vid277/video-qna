@@ -5,7 +5,9 @@
     "."
   ],
   "exclude": [
-    "embeddings",
+    "embeddings/server.py",
+    "embeddings/vendor",
+    "embeddings/.venv",
     "experiments",
     "**/__pycache__",
     ".venv"

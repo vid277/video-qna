@@ -5,8 +5,8 @@ from datetime import timedelta
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest.archive import FrameArchive
-from ingest.store import Store
+from store.archive import FrameArchive
+from store.store import Store
 from tests.factory import CAMERA, T0, add_frame, frames
 
 

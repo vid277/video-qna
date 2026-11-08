@@ -8,8 +8,8 @@ from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from ingest.runtime import archive, config, store
 from models.health import HealthReport, LogLine, ProcessHealth, ProcessStatus
+from store.runtime import archive, config, store
 
 DISK_EVERY_S = 300.0
 STALE_BEATS = 3

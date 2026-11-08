@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 
-from ingest import images
 from ingest.changes import ChangeTracker, SceneWatcher
 from models import Box, ChangeKind, IngestConfig
+from store import images
 
 CONFIG = IngestConfig.from_yaml(Path(__file__).with_name("ingest.yaml"))
 W, H = 960, 540

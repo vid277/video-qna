@@ -5,11 +5,11 @@ from datetime import timedelta
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest import retention
-from ingest.archive import FrameArchive
-from ingest.db import Frame
-from ingest.store import Store
+from background import retention
 from models import IngestConfig, VideoEncoder
+from store.archive import FrameArchive
+from store.db import Frame
+from store.store import Store
 from tests.factory import (
     CAMERA,
     T0,

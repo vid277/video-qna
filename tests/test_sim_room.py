@@ -5,9 +5,9 @@ from collections.abc import AsyncIterator
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ingest.room import RoomLog
-from ingest.store import Store
+from background.room import RoomLog
 from models import IngestConfig
+from store.store import Store
 from tests.sim import library
 from tests.sim.room_check import check_room, perfect_tracker
 from tests.sim.run import SCENARIOS, trace

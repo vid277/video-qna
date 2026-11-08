@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
-from ingest.images import PREVIEW_SCALE, Image, Mask, gray
 from models import Box, Change, ChangeKind, IngestConfig, LightMode, Observation
+from store.images import PREVIEW_SCALE, Image, Mask, gray
 
 MOTION_HISTORY = 120
 MOTION_RATE = 0.05
